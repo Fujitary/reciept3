@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="経費帳">
+  <meta name="theme-color" content="#F9A8D4">
+  <title>レシート経費帳 🎀</title>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+    body{
+      font-family:'M PLUS Rounded 1c','Hiragino Maru Gothic ProN',sans-serif;
+      background:linear-gradient(160deg,#FFF0F6 0%,#FDF4FF 40%,#F0F9FF 100%);
+      min-height:100dvh;display:flex;justify-content:center;overscroll-behavior:none;
+    }
+    #app{width:100%;max-width:430px;padding-bottom:80px;position:relative;z-index:1;}
+    .deco{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0;}
+    .deco span{position:absolute;opacity:.14;animation:floaty 5s ease-in-out infinite alternate;}
+
+    /* Header */
+    .hdr{background:linear-gradient(135deg,#FBCFE8,#F9A8D4 35%,#E879F9 70%,#C084FC);background-size:300% 300%;animation:shimmer 5s linear infinite alternate;padding:calc(env(safe-area-inset-top,0px) + 44px) 24px 28px;border-bottom-left-radius:32px;border-bottom-right-radius:32px;box-shadow:0 8px 32px rgba(249,168,212,.45);position:relative;overflow:hidden;}
+    .hdr-deco{position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.15);}
+    .hdr-eyebrow{font-size:10px;letter-spacing:.18em;color:rgba(255,255,255,.85);margin-bottom:6px;font-weight:800;}
+    .hdr-title{font-size:24px;font-weight:900;color:#fff;text-shadow:0 2px 8px rgba(168,85,247,.3);margin:0;}
+    .hdr-sub{font-size:12px;color:rgba(255,255,255,.85);margin-top:4px;}
+    .hdr-stats{margin-top:18px;display:flex;gap:10px;}
+    .stat{background:rgba(255,255,255,.25);border-radius:16px;padding:12px 16px;border:1px solid rgba(255,255,255,.4);}
+    .stat-lbl{font-size:10px;color:rgba(255,255,255,.9);font-weight:700;margin-bottom:2px;}
+    .stat-val{font-size:24px;font-weight:900;color:#fff;}
+
+    /* Tabs */
+    .tabs{margin:18px 16px 0;background:#fff;border-radius:20px;padding:6px;display:flex;gap:4px;box-shadow:0 4px 20px rgba(249,168,212,.2);border:1.5px solid #FDE7F0;}
+    .tab{flex:1;padding:10px 4px;border:none;border-radius:14px;cursor:pointer;font-family:inherit;font-size:11px;font-weight:800;transition:all .2s;background:transparent;color:#C084FC;}
+    .tab.on{background:linear-gradient(135deg,#F9A8D4,#E879F9);color:#fff;box-shadow:0 4px 12px rgba(232,121,249,.35);transform:scale(1.04);}
+    .tab-ic{font-size:16px;display:block;margin-bottom:2px;}
+
+    /* Content */
+    .content{padding:16px;}
+
+    /* Cards */
+    .card{background:#fff;border-radius:18px;padding:16px;box-shadow:0 4px 20px rgba(249,168,212,.15);border:1.5px solid #FDE7F0;margin-bottom:12px;}
+    .card-title{font-size:13px;font-weight:900;color:#DB2777;margin-bottom:6px;}
+    .card-sub{font-size:11px;color:#F472B6;line-height:1.7;font-weight:600;margin-bottom:10px;}
+
+    /* Inputs */
+    .inp{width:100%;padding:11px 14px;border:1.5px solid #FDE7F0;border-radius:12px;font-size:13px;color:#831843;background:#FFF0F6;font-family:inherit;outline:none;}
+    .inp:focus{border-color:#F9A8D4;}
+    .inp-lbl{font-size:10px;color:#F472B6;font-weight:800;margin-bottom:4px;}
+
+    /* Buttons */
+    .btn-grad{width:100%;padding:15px;border:none;border-radius:18px;font-size:15px;font-weight:900;cursor:pointer;font-family:inherit;transition:all .15s;background:linear-gradient(135deg,#F9A8D4,#E879F9,#A78BFA);color:#fff;box-shadow:0 6px 20px rgba(232,121,249,.4);}
+    .btn-grad:disabled{background:#F3F4F6;color:#9CA3AF;box-shadow:none;cursor:default;}
+    .btn-soft{width:100%;padding:12px;border:1.5px solid #FDE7F0;border-radius:14px;background:#fff;font-size:13px;font-weight:800;color:#F472B6;cursor:pointer;font-family:inherit;margin-top:10px;}
+    .btn-done{width:100%;padding:10px;background:linear-gradient(135deg,#F9A8D4,#E879F9);color:#fff;border:none;border-radius:12px;font-weight:900;cursor:pointer;font-size:13px;font-family:inherit;box-shadow:0 4px 12px rgba(232,121,249,.35);}
+
+    /* Scan */
+    .scan-drop{width:100%;padding:48px 24px;background:linear-gradient(135deg,#FFF0F6,#FDF4FF);border:2.5px dashed #F9A8D4;border-radius:24px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;font-family:inherit;animation:popIn .4s ease;}
+    .preview{position:relative;margin-bottom:12px;}
+    .preview img{width:100%;border-radius:20px;object-fit:cover;max-height:280px;border:3px solid #FDE7F0;display:block;box-shadow:0 8px 32px rgba(249,168,212,.3);}
+    .preview-badge{position:absolute;top:10px;right:10px;background:linear-gradient(135deg,#F9A8D4,#E879F9);color:#fff;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:800;}
+    .loading{background:#fff;border-radius:20px;padding:28px;text-align:center;border:1.5px solid #FDE7F0;box-shadow:0 4px 24px rgba(249,168,212,.2);}
+    .dots{display:inline-flex;gap:6px;align-items:center;}
+    .dot{width:8px;height:8px;border-radius:50%;background:#F9A8D4;animation:bop 1.2s infinite;}
+    .err{background:#FFF1F2;border:1.5px solid #FECDD3;border-radius:14px;padding:14px 16px;margin-top:10px;}
+    .err-title{color:#E11D48;font-size:13px;font-weight:800;margin-bottom:4px;}
+    .err-msg{color:#9F1239;font-size:11px;line-height:1.7;word-break:break-all;font-family:monospace;}
+
+    /* Items */
+    .item{background:#fff;border-radius:18px;padding:16px;border:1.5px solid #FDE7F0;box-shadow:0 4px 16px rgba(249,168,212,.12);margin-bottom:10px;animation:popIn .3s ease;}
+    .tag{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:800;border-width:1.5px;border-style:solid;}
+    .edit-inp{width:100%;padding:8px 12px;border:1.5px solid #FDE7F0;border-radius:10px;font-size:13px;background:#FFF0F6;color:#831843;font-family:inherit;outline:none;box-sizing:border-box;}
+
+    /* Summary */
+    .sum-row{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;border-radius:12px;margin-bottom:8px;}
+
+    /* Result */
+    .result{margin-top:10px;padding:13px 16px;border-radius:14px;font-size:13px;font-weight:800;text-align:center;animation:popIn .3s ease;}
+
+    /* Code */
+    .code-wrap{position:relative;background:#1E1033;border-radius:12px;overflow:hidden;border:1.5px solid rgba(249,168,212,.3);}
+    .code-copy{position:absolute;top:10px;right:10px;padding:5px 12px;background:#F9A8D4;color:#831843;border:none;border-radius:20px;font-size:11px;font-weight:800;cursor:pointer;}
+    pre{margin:0;padding:16px;overflow-x:auto;font-size:10.5px;color:#E9D5FF;line-height:1.7;white-space:pre-wrap;word-break:break-all;}
+
+    /* Empty */
+    .empty{text-align:center;padding:52px 0;}
+
+    /* Animations */
+    @keyframes floaty{from{transform:translateY(0) rotate(-5deg)}to{transform:translateY(-14px) rotate(5deg)}}
+    @keyframes shimmer{0%{background-position:0% 50%}100%{background-position:100% 50%}}
+    @keyframes bop{0%,80%,100%{transform:scale(.5);opacity:.3}40%{transform:scale(1);opacity:1}}
+    @keyframes popIn{0%{transform:scale(.7);opacity:0}80%{transform:scale(1.04)}100%{transform:scale(1);opacity:1}}
+    @keyframes slideUp{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+  </style>
+</head>
+<body>
+<div class="deco" id="deco"></div>
+<div id="app"></div>
+
+<script>
+// ★★★ ここにAPIキーを入れてね ★★★
+// console.anthropic.com でAPIキーを取得して、下の '' の中に貼り付ける
+const EMBEDDED_API_KEY = '';
+// ★★★★★★★★★★★★★★★★★★★
+
+const CATS = ["交通費","飲食費","消耗品費","接待費","宿泊費","通信費","その他"];
+const META = {
+  "交通費":  {icon:"🚃",color:"#A78BFA",bg:"#F5F3FF"},
+  "飲食費":  {icon:"🍰",color:"#F472B6",bg:"#FDF2F8"},
+  "消耗品費":{icon:"🛍️",color:"#34D399",bg:"#ECFDF5"},
+  "接待費":  {icon:"🥂",color:"#FBBF24",bg:"#FFFBEB"},
+  "宿泊費":  {icon:"🛋️",color:"#60A5FA",bg:"#EFF6FF"},
+  "通信費":  {icon:"📱",color:"#F87171",bg:"#FEF2F2"},
+  "その他":  {icon:"✨",color:"#C084FC",bg:"#FAF5FF"},
+};
+const GAS_CODE = `function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName("経費精算");
+    if (!sheet) {
+      sheet = ss.insertSheet("経費精算");
+      const h = ["日付","店名","品目","金額","カテゴリ","登録日時","送信者"];
+      sheet.getRange(1,1,1,h.length).setValues([h]);
+      sheet.getRange(1,1,1,h.length).setBackground("#F9A8D4").setFontColor("#fff").setFontWeight("bold");
+      sheet.setFrozenRows(1);
+    }
+    const rows = data.items.map(i=>[
+      i.date, i.store, i.item, Number(i.amount), i.category,
+      new Date().toLocaleString("ja-JP"), data.userName||"未設定"
+    ]);
+    const lr = sheet.getLastRow();
+    sheet.getRange(lr+1,1,rows.length,7).setValues(rows);
+    sheet.getRange(lr+1,4,rows.length,1).setNumberFormat("¥#,##0");
+    return ContentService.createTextOutput(JSON.stringify({success:true})).setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({success:false,error:err.toString()})).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+function doGet(){return ContentService.createTextOutput(JSON.stringify({status:"ok"})).setMimeType(ContentService.MimeType.JSON);}`;
+
+// ── ストレージ ──
+const load = (k,d) => { try{return JSON.parse(localStorage.getItem(k)||'null')??d}catch{return d} };
+const save = (k,v) => localStorage.setItem(k, JSON.stringify(v));
+
+// ── ステート ──
+let S = {
+  tab:      'scan',
+  items:    load('rcpt_items', []),
+  apiKey:   EMBEDDED_API_KEY || load('rcpt_key', ''),
+  gasUrl:   load('rcpt_gas', ''),
+  userName: load('rcpt_name', ''),
+  preview:  null,
+  scanning: false,
+  error:    null,
+  editIdx:  null,
+  sending:  false,
+  sendRes:  null,
+  showGas:  false,
+  showKey:  !EMBEDDED_API_KEY,  // APIキー埋め込み済みなら非表示
+};
+
+function set(patch) { Object.assign(S, patch); render(); }
+
+// デコ初期化
+(()=>{
+  const w = document.getElementById('deco');
+  ['🌸','⭐','💫','🎀','✨','💖','🌷','🍬','💎','🌙'].forEach((e,i)=>{
+    const s = document.createElement('span');
+    s.textContent = e;
+    s.style.cssText = `left:${(i*11+5)%95}%;top:${(i*17+10)%90}%;font-size:${i%3===0?18:13}px;animation-delay:${i*.4}s;animation-duration:${4+i*.7}s`;
+    w.appendChild(s);
+  });
+})();
+
+// ── API呼び出し ──
+async function scanReceipt(base64, mime) {
+  const today = new Date().toISOString().slice(0,10);
+  const key = S.apiKey;
+  if (!key) throw new Error('APIキーが未設定です');
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-opus-4-5',
+      max_tokens: 1024,
+      system: `レシート解析AI。JSON配列のみ返す。コードブロック・説明文不要。
+形式: [{"date":"YYYY-MM-DD","store":"店名","item":"品目","amount":数値,"category":"カテゴリ"}]
+カテゴリ: 交通費/飲食費/消耗品費/接待費/宿泊費/通信費/その他
+日付不明→${today} 郵便局→通信費`,
+      messages: [{role:'user', content:[
+        {type:'image', source:{type:'base64', media_type:mime, data:base64}},
+        {type:'text',  text:'このレシートをJSON配列で返して。'}
+      ]}]
+    })
+  });
+
+  const text = await res.text();
+  let data;
+  try { data = JSON.parse(text); } catch { throw new Error(`パース失敗 (HTTP ${res.status}): ${text.slice(0,80)}`); }
+  if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+
+  const aiText = data.content?.find(b=>b.type==='text')?.text || '';
+  if (!aiText) throw new Error(`AIの応答が空 (stop: ${data.stop_reason})`);
+
+  const m = aiText.match(/\[[\s\S]*\]/);
+  if (!m) throw new Error(`JSON配列なし。応答: ${aiText.slice(0,100)}`);
+
+  const arr = JSON.parse(m[0]);
+  return Array.isArray(arr) ? arr : [arr];
+}
+
+// ── ファイル選択 ──
+async function handleFile(file) {
+  if (!file) return;
+  set({error:null});
+  if (!S.apiKey) { set({error:'APIキーを入力してね 🔑', showKey:true}); return; }
+
+  const dataUrl = await new Promise((res,rej)=>{
+    const r = new FileReader();
+    r.onload = e => res(e.target.result);
+    r.onerror = () => rej(new Error('読み込み失敗'));
+    r.readAsDataURL(file);
+  });
+
+  set({preview: dataUrl, scanning: true, tab: 'scan'});
+
+  try {
+    const arr = await scanReceipt(dataUrl.split(',')[1], file.type||'image/jpeg');
+    S.items = [...S.items, ...arr.map((it,i)=>({...it, id:Date.now()+i, by:S.userName||''}))];
+    save('rcpt_items', S.items);
+    set({scanning:false, tab:'list'});
+  } catch(err) {
+    set({scanning:false, error:err.message});
+  }
+}
+
+// ── Sheets送信 ──
+async function sendToSheets() {
+  if (!S.gasUrl) { set({sendRes:{ok:false,msg:'GAS URLを入力してね💭'}}); return; }
+  if (!S.items.length) { set({sendRes:{ok:false,msg:'経費データがないよ📷'}}); return; }
+  set({sending:true, sendRes:null});
+  try {
+    await fetch(S.gasUrl, {
+      method:'POST', mode:'no-cors',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({items:S.items, userName:S.userName||'未設定'})
+    });
+    set({sending:false, sendRes:{ok:true, msg:`${S.items.length}件を送信したよ🎉`}});
+  } catch {
+    set({sending:false, sendRes:{ok:false, msg:'送信失敗。GAS URLを確認してね💦'}});
+  }
+}
+
+// ── CSV ──
+function dlCSV() {
+  const csv = '\uFEFF日付,店名,品目,金額,カテゴリ,送信者\n' +
+    S.items.map(i=>`${i.date},${i.store},"${i.item}",${i.amount},${i.category},${i.by||''}`).join('\n');
+  Object.assign(document.createElement('a'),{
+    href: URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})),
+    download: `経費精算_${new Date().toISOString().slice(0,10)}.csv`
+  }).click();
+}
+
+// ── タグHTML ──
+function tagHTML(cat) {
+  const m = META[cat]||META['その他'];
+  return `<span class="tag" style="background:${m.bg};color:${m.color};border-color:${m.color}55">${m.icon} ${cat}</span>`;
+}
+
+// ── レンダー ──
+function render() {
+  const total = S.items.reduce((s,i)=>s+(Number(i.amount)||0),0);
+  const catTots = CATS.map(c=>({name:c,total:S.items.filter(i=>i.category===c).reduce((s,i)=>s+(Number(i.amount)||0),0)})).filter(c=>c.total>0);
+
+  let h = `
+  <div class="hdr">
+    <div class="hdr-deco"></div>
+    <div class="hdr-eyebrow">✦ RECEIPT TRACKER ✦</div>
+    <h1 class="hdr-title">レシート経費帳 🎀</h1>
+    <div class="hdr-sub">撮るだけ・かんたん・かわいい</div>
+    ${S.items.length ? `
+    <div class="hdr-stats" style="animation:slideUp .4s ease">
+      <div class="stat" style="flex:1"><div class="stat-lbl">💰 合計金額</div><div class="stat-val">¥${total.toLocaleString()}</div></div>
+      <div class="stat" style="min-width:70px;text-align:center"><div class="stat-lbl">📝 件数</div><div class="stat-val">${S.items.length}</div></div>
+    </div>` : ''}
+  </div>
+
+  <div class="tabs">
+    ${[['scan','📷','スキャン'],['list','🛍️',`一覧${S.items.length?` (${S.items.length})`:''}`],['sheets','✨','Sheets']].map(([k,ic,lbl])=>
+      `<button class="tab ${S.tab===k?'on':''}" onclick="set({tab:'${k}'})">
+        <span class="tab-ic">${ic}</span>${lbl}
+      </button>`
+    ).join('')}
+  </div>`;
+
+  // ══ スキャンタブ ══
+  if (S.tab === 'scan') {
+    h += `<div class="content">`;
+
+    // 名前設定
+    h += `
+    <div class="card">
+      <div class="card-title">👤 あなたの名前</div>
+      <div class="card-sub">誰がスキャンしたかSheetsに記録されるよ</div>
+      <input class="inp" type="text" placeholder="例：田中あい" value="${S.userName}"
+        oninput="S.userName=this.value;save('rcpt_name',S.userName)">
+    </div>`;
+
+    // APIキー（埋め込みがなければ表示）
+    if (!EMBEDDED_API_KEY) {
+      h += `
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div class="card-title" style="margin:0">🔑 Anthropic APIキー</div>
+          ${S.apiKey ? `<span style="font-size:11px;color:#059669;font-weight:800">✅ 設定済み</span>` : ''}
+        </div>
+        ${!S.apiKey || S.showKey ? `
+          <div class="card-sub"><a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:#DB2777">console.anthropic.com</a> で取得してね🌸<br><span style="color:#FDA4AF">🔒 このデバイスにのみ保存されます</span></div>
+          <input class="inp" type="password" placeholder="sk-ant-api03-..." value="${S.apiKey}"
+            oninput="S.apiKey=this.value;save('rcpt_key',S.apiKey)">
+          ${S.apiKey ? `<button onclick="set({showKey:false})" style="margin-top:8px;width:100%;padding:8px;background:linear-gradient(135deg,#F9A8D4,#E879F9);color:#fff;border:none;border-radius:10px;font-weight:800;cursor:pointer;font-size:12px;font-family:inherit">保存して閉じる ✓</button>` : ''}
+        ` : `<button onclick="set({showKey:true})" style="font-size:11px;color:#F472B6;background:none;border:none;cursor:pointer;font-weight:800;font-family:inherit;padding:0">✏️ 変更する</button>`}
+      </div>`;
+    }
+
+    // スキャンボタン
+    h += `<input id="fi" type="file" accept="image/*" capture="environment" style="display:none" onchange="handleFile(this.files[0]);this.value=''">`;
+
+    if (!S.scanning && !S.preview) {
+      h += `
+      <label for="fi" class="scan-drop">
+        <span style="font-size:54px">📷</span>
+        <span style="font-weight:900;font-size:16px;color:#DB2777">レシートを撮影 / 選択</span>
+        <span style="font-size:12px;color:#F472B6;font-weight:600">タップしてカメラを起動✨</span>
+      </label>`;
+    }
+
+    if (S.preview) {
+      h += `
+      <div class="preview">
+        <img src="${S.preview}">
+        <div class="preview-badge">✓ スキャン済</div>
+      </div>`;
+    }
+
+    if (S.scanning) {
+      h += `
+      <div class="loading">
+        <div style="font-size:40px;margin-bottom:10px">🔍</div>
+        <div class="dots"><span class="dot" style="animation-delay:0s"></span><span class="dot" style="animation-delay:.2s"></span><span class="dot" style="animation-delay:.4s"></span></div>
+        <div style="margin-top:12px;font-size:13px;color:#F472B6;font-weight:700">AIがレシートを解析中だよ…</div>
+        <div style="font-size:11px;color:#FDA4AF;margin-top:4px">ちょっと待っててね🌸</div>
+      </div>`;
+    }
+
+    if (S.error) {
+      h += `
+      <div class="err">
+        <div class="err-title">😢 エラー</div>
+        <div class="err-msg">${S.error}</div>
+      </div>`;
+    }
+
+    if (S.preview && !S.scanning) {
+      h += `
+      <input id="fi2" type="file" accept="image/*" capture="environment" style="display:none" onchange="S.preview=null;S.error=null;handleFile(this.files[0]);this.value=''">
+      <label for="fi2" class="btn-soft" style="display:block;text-align:center;margin-top:10px;cursor:pointer">＋ 別のレシートを追加する</label>`;
+    }
+
+    h += `</div>`;
+  }
+
+  // ══ 一覧タブ ══
+  if (S.tab === 'list') {
+    h += `<div class="content">`;
+    if (!S.items.length) {
+      h += `
+      <div class="empty">
+        <div style="font-size:52px;margin-bottom:14px">🛍️</div>
+        <div style="font-size:15px;font-weight:900;color:#DB2777;margin-bottom:6px">まだ何もないよ！</div>
+        <div style="font-size:12px;color:#F472B6">スキャンタブでレシートを読み取ってね📷</div>
+      </div>`;
+    } else {
+      if (catTots.length) {
+        h += `<div class="card"><div style="font-size:11px;font-weight:900;color:#F9A8D4;letter-spacing:.1em;margin-bottom:12px">💖 カテゴリ別まとめ</div>`;
+        catTots.forEach(c=>{
+          const m=META[c.name]||META['その他'];
+          h += `<div class="sum-row" style="background:${m.bg}">${tagHTML(c.name)}<span style="font-size:14px;font-weight:900;color:${m.color}">¥${c.total.toLocaleString()}</span></div>`;
+        });
+        h += `</div>`;
+      }
+
+      S.items.forEach((item,idx)=>{
+        const m=META[item.category]||META['その他'];
+        if (S.editIdx===idx) {
+          h += `<div class="item">
+            ${[['date','📅 日付','date'],['store','🏪 店名','text'],['item','🛍 品目','text'],['amount','💴 金額','number']].map(([f,l,t])=>`
+              <div style="margin-bottom:8px">
+                <div class="inp-lbl">${l}</div>
+                <input class="edit-inp" type="${t}" value="${item[f]}"
+                  oninput="S.items[${idx}]['${f}']=${t==='number'?'Number(this.value)':'this.value'};save('rcpt_items',S.items)">
+              </div>`).join('')}
+            <div style="margin-bottom:8px">
+              <div class="inp-lbl">🏷 カテゴリ</div>
+              <select class="edit-inp" onchange="S.items[${idx}].category=this.value;save('rcpt_items',S.items);render()">
+                ${CATS.map(c=>`<option ${c===item.category?'selected':''}>${c}</option>`).join('')}
+              </select>
+            </div>
+            <button class="btn-done" onclick="set({editIdx:null})">完了 ✓</button>
+          </div>`;
+        } else {
+          h += `<div class="item">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+              <div style="flex:1">
+                <div style="font-weight:900;font-size:15px;color:#831843">${item.store}</div>
+                <div style="font-size:12px;color:#F472B6;margin-top:3px;font-weight:600">${item.item}</div>
+              </div>
+              <div style="font-weight:900;font-size:17px;color:${m.color};background:${m.bg};border-radius:12px;padding:4px 12px;border:1.5px solid ${m.color}33">¥${Number(item.amount).toLocaleString()}</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+                ${tagHTML(item.category)}
+                <span style="font-size:11px;color:#FDA4AF;font-weight:600">${item.date}</span>
+                ${item.by?`<span style="font-size:11px;color:#C084FC;font-weight:600">👤${item.by}</span>`:''}
+              </div>
+              <div style="display:flex;gap:5px;flex-shrink:0">
+                <button onclick="set({editIdx:${idx}})" style="padding:4px 10px;font-size:11px;border:1.5px solid #FDE7F0;border-radius:20px;background:#FFF0F6;cursor:pointer;color:#F472B6;font-weight:800;font-family:inherit">編集</button>
+                <button onclick="S.items.splice(${idx},1);save('rcpt_items',S.items);render()" style="padding:4px 10px;font-size:11px;border:1.5px solid #FECDD3;border-radius:20px;background:#FFF1F2;cursor:pointer;color:#E11D48;font-weight:800;font-family:inherit">削除</button>
+              </div>
+            </div>
+          </div>`;
+        }
+      });
+    }
+    h += `</div>`;
+  }
+
+  // ══ Sheetsタブ ══
+  if (S.tab === 'sheets') {
+    h += `<div class="content">
+    <div class="card">
+      <div class="card-title">🔗 Google Sheets URL</div>
+      <div class="card-sub">GASをデプロイして取得したURLを入力してね✨<br>全員のデータが1つのシートに集まるよ📊</div>
+      <input class="inp" type="url" placeholder="https://script.google.com/macros/s/..." value="${S.gasUrl}"
+        oninput="S.gasUrl=this.value;save('rcpt_gas',S.gasUrl)">
+    </div>
+
+    <button class="btn-grad" onclick="sendToSheets()" ${S.sending||!S.items.length?'disabled':''}>
+      ${S.sending
+        ? `<span class="dots"><span class="dot"></span><span class="dot" style="animation-delay:.2s"></span><span class="dot" style="animation-delay:.4s"></span></span> <span style="margin-left:8px">送信中…</span>`
+        : `📊 Sheetsに送信する！ (${S.items.length}件)`}
+    </button>
+
+    ${S.sendRes ? `<div class="result" style="background:${S.sendRes.ok?'#F0FDF4':'#FFF1F2'};color:${S.sendRes.ok?'#15803D':'#E11D48'};border:1.5px solid ${S.sendRes.ok?'#86EFAC':'#FECDD3'}">${S.sendRes.msg}</div>` : ''}
+
+    <button class="btn-soft" onclick="dlCSV()">⬇️ CSVでダウンロード</button>
+
+    <div style="margin-top:16px;background:#fff;border-radius:18px;overflow:hidden;border:1.5px solid #FDE7F0;box-shadow:0 4px 20px rgba(249,168,212,.12)">
+      <button onclick="set({showGas:!S.showGas})" style="width:100%;padding:14px 18px;border:none;background:transparent;display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:900;color:#DB2777;cursor:pointer;font-family:inherit">
+        <span>⚙️ GASのセットアップ方法</span>
+        <span style="font-size:18px;color:#F9A8D4;display:inline-block;transform:${S.showGas?'rotate(90deg)':'none'};transition:transform .2s">›</span>
+      </button>
+      ${S.showGas ? `
+      <div style="padding:0 18px 18px">
+        <ol style="padding-left:20px;margin:0 0 14px;display:flex;flex-direction:column;gap:8px">
+          ${['Google スプレッドシートを新規作成（みんなと共有しておくとGood✨）',
+             '「拡張機能」→「Apps Script」を開く',
+             '下のコードをコピーして貼り付けて保存',
+             '「デプロイ」→「新しいデプロイ」→「ウェブアプリ」を選択',
+             '「アクセスできるユーザー」を「全員」にしてデプロイ',
+             '発行されたURLを上の欄に貼り付ける（全員が同じURLを使う）',
+          ].map((s,i)=>`<li style="font-size:12px;color:#6B7280;line-height:1.7;font-weight:600"><span style="font-weight:900;color:#F472B6">Step ${i+1}：</span>${s}</li>`).join('')}
+        </ol>
+        <div class="code-wrap">
+          <button id="cpybtn" class="code-copy" onclick="navigator.clipboard.writeText(document.getElementById('gascode').textContent);this.textContent='✓ コピー完了！';this.style.background='#86EFAC';setTimeout(()=>{this.textContent='コピー 📋';this.style.background='#F9A8D4'},2000)">コピー 📋</button>
+          <pre id="gascode">${GAS_CODE.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+        </div>
+        <div style="margin-top:10px;padding:10px 14px;background:#FFFBEB;border-radius:10px;border:1.5px solid #FDE68A;font-size:11px;color:#78350F;line-height:1.7">
+          <b style="color:#92400E">⚠️ 初回認証：</b>「詳細」→「安全でないページへ移動」→「許可」を選んでね！
+        </div>
+      </div>` : ''}
+    </div>
+    </div>`;
+  }
+
+  document.getElementById('app').innerHTML = h;
+}
+
+render();
+</script>
+</body>
+</html>
